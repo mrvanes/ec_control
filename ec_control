@@ -10,8 +10,8 @@ r = portio.ioperm(0x66, 1, 1)
 
 fan = {
     0: 0x09,
-    1: 0xf9,
-    2: 0xfb
+    50: 0xf9,
+    60: 0xfb
 }
 
 def wait_write():
@@ -38,10 +38,9 @@ while True:
     #print(f"Temp: {temp}", flush=True)
 
     setfan = 0
-    if temp > 50:
-        setfan = 1
-    if temp > 60:
-        setfan = 2
+    for t, v in fan.items():
+      if temp > t:
+          setfan = t
 
     if setfan != oldfan:
         print(f'ec_control write {setfan}', flush=True)
