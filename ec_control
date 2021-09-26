@@ -1,0 +1,56 @@
+import sys
+import time
+import portio
+import time
+
+file = open('/sys/devices/virtual/thermal/thermal_zone3/temp', 'r')
+
+r = portio.ioperm(0x62, 1, 1)
+r = portio.ioperm(0x66, 1, 1)
+
+fan = {
+    0: 0x09,
+    1: 0xf9,
+    2: 0xfb
+}
+
+def wait_write():
+    i = 100
+    while (portio.inb(0x66) & 0x02) and i:
+        i -= 1
+        time.sleep(0.01)
+    return i
+
+def write(port, val):
+    if wait_write():
+        portio.outb(val, port)
+
+setfan = 0
+oldfan = 0
+
+write(0x66, 0x81)
+write(0x62, 0x31)
+write(0x62, fan[0])
+
+while True:
+    file.seek(0, 0)
+    temp = round(int(file.read())/1000)
+    #print(f"Temp: {temp}", flush=True)
+
+    setfan = 0
+    if temp > 50:
+        setfan = 1
+    if temp > 60:
+        setfan = 2
+
+    if setfan != oldfan:
+        print(f'ec_control write {setfan}', flush=True)
+        write(0x66, 0x81)
+        write(0x62, 0x31)
+        write(0x62, fan[setfan])
+        oldfan = setfan
+
+    time.sleep(1)
+
+
+
